@@ -467,38 +467,147 @@ body {
 
 .game-row__status.is-live { color: var(--red); }
 
-/* ---------- Spotify ---------- */
+/* ---------- Spotify (via Last.fm) ---------- */
 
 .np-track {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+.np-art-wrap {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .np-art {
-  width: 52px;
-  height: 52px;
-  border-radius: 6px;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
   object-fit: cover;
   border: 1px solid var(--border);
+  box-shadow: 0 0 0 1px rgba(29,185,84,0.15), 0 6px 16px -6px rgba(29,185,84,0.4);
+}
+
+.np-art--empty {
+  background: var(--panel-2);
+}
+
+.np-info { min-width: 0; }
+
+.np-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: #1DB954;
+  margin-bottom: 3px;
+}
+
+.eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 9px;
+}
+
+.eq span {
+  width: 2px;
+  background: #1DB954;
+  border-radius: 1px;
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+.eq span:nth-child(1) { height: 40%; animation-delay: 0s; }
+.eq span:nth-child(2) { height: 100%; animation-delay: 0.2s; }
+.eq span:nth-child(3) { height: 65%; animation-delay: 0.4s; }
+
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
 }
 
 .np-title {
   font-family: var(--font-display);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .np-artist {
   color: var(--muted);
-  font-size: 12px;
-  margin-top: 2px;
+  font-size: 11.5px;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .np-empty {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11.5px;
+  margin-bottom: 6px;
+}
+
+.np-recent-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+  margin-bottom: 4px;
+}
+
+.np-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.np-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.np-recent-art {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.np-recent-art--empty {
+  background: var(--panel-2);
+}
+
+.np-recent-text { min-width: 0; }
+
+.np-recent-title {
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-recent-artist {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- Lists (news / games) ---------- */

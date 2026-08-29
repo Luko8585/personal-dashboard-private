@@ -193,20 +193,27 @@ app.get('/api/spotify/now-playing', async (req, res) => {
     return res.status(200).json({ playing: false, notConfigured: true });
   }
   try {
-    const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(LASTFM_USERNAME)}&api_key=${LASTFM_API_KEY}&format=json&limit=1`;
+    const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(LASTFM_USERNAME)}&api_key=${LASTFM_API_KEY}&format=json&limit=5`;
     const r = await fetch(url);
     if (!r.ok) throw new Error(`Last.fm ${r.status}`);
     const json = await r.json();
-    const track = json.recenttrack?.track?.[0] || json.recenttracks?.track?.[0];
-    if (!track) return res.json({ playing: false });
-    const isNowPlaying = track['@attr']?.nowplaying === 'true';
-    if (!isNowPlaying) return res.json({ playing: false });
+    const tracks = json.recenttracks?.track || [];
+    if (!tracks.length) return res.json({ playing: false, recent: [] });
+
+    const toTrack = (t) => ({
+      track: t.name,
+      artist: t.artist?.['#text'],
+      album: t.album?.['#text'],
+      albumArt: t.image?.find(i => i.size === 'extralarge')?.['#text'] || t.image?.slice(-1)[0]?.['#text'],
+    });
+
+    const first = tracks[0];
+    const isNowPlaying = first['@attr']?.nowplaying === 'true';
+
     res.json({
-      playing: true,
-      track: track.name,
-      artist: track.artist?.['#text'],
-      album: track.album?.['#text'],
-      albumArt: track.image?.find(i => i.size === 'extralarge')?.['#text'] || track.image?.slice(-1)[0]?.['#text'],
+      playing: isNowPlaying,
+      ...(isNowPlaying ? toTrack(first) : {}),
+      recent: tracks.slice(isNowPlaying ? 1 : 0, isNowPlaying ? 5 : 4).map(toTrack),
     });
   } catch (e) {
     res.status(502).json({ error: e.message });

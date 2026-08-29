@@ -206,7 +206,7 @@ async function loadGames() {
   }
 }
 
-// ---------- Spotify ----------
+// ---------- Spotify (via Last.fm) ----------
 async function loadSpotify() {
   const body = document.getElementById('spotifyBody');
   try {
@@ -218,18 +218,37 @@ async function loadSpotify() {
       body.innerHTML = `<div class="np-empty">Not connected yet. Add LASTFM_API_KEY / LASTFM_USERNAME to enable.</div>`;
       return;
     }
+
+    const recentHtml = (data.recent || []).slice(0, data.playing ? 3 : 4).map(t => `
+      <div class="np-recent-row">
+        ${t.albumArt ? `<img class="np-recent-art" src="${t.albumArt}" alt="">` : '<div class="np-recent-art np-recent-art--empty"></div>'}
+        <div class="np-recent-text">
+          <div class="np-recent-title">${t.track}</div>
+          <div class="np-recent-artist">${t.artist}</div>
+        </div>
+      </div>
+    `).join('');
+
     if (!data.playing) {
-      body.innerHTML = `<div class="np-empty">Nothing playing right now.</div>`;
+      body.innerHTML = `
+        <div class="np-empty">Nothing playing right now.</div>
+        ${recentHtml ? `<div class="np-recent-label">Recently Played</div><div class="np-recent-list">${recentHtml}</div>` : ''}
+      `;
       return;
     }
+
     body.innerHTML = `
       <div class="np-track">
-        ${data.albumArt ? `<img class="np-art" src="${data.albumArt}" alt="">` : ''}
-        <div>
+        <div class="np-art-wrap">
+          ${data.albumArt ? `<img class="np-art" src="${data.albumArt}" alt="">` : '<div class="np-art np-art--empty"></div>'}
+        </div>
+        <div class="np-info">
+          <div class="np-live"><span class="eq"><span></span><span></span><span></span></span> LIVE</div>
           <div class="np-title">${data.track}</div>
           <div class="np-artist">${data.artist}</div>
         </div>
       </div>
+      ${recentHtml ? `<div class="np-recent-label">Recently Played</div><div class="np-recent-list">${recentHtml}</div>` : ''}
     `;
   } catch (e) {
     body.classList.remove('loading');
