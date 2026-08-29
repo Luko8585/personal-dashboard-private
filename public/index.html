@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="board-header">
+  <div class="board-header__left">
+    <span class="led"></span>
+    <span class="eyebrow">DASHBOARD // STATUS: ONLINE</span>
+  </div>
+  <div class="board-header__clock">
+    <div id="mainClock" class="mainClock">--:--:--</div>
+    <div id="mainDate" class="mainDate">-- --- ----</div>
+  </div>
+  <div class="board-header__right" id="worldClocks">
+    <!-- populated by JS -->
+  </div>
+</header>
+
+<div id="alertsBanner" class="alerts-banner hidden"></div>
+
+<main class="grid">
+
+  <section class="card card--weather">
+    <div class="card__head">
+      <h2>Weather</h2>
+      <div class="toggle" id="weatherToggle">
+        <button class="toggle__btn is-active" data-place="home">Baltimore</button>
+        <button class="toggle__btn" data-place="partner">Pocomoke</button>
+      </div>
+    </div>
+    <div id="weatherBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--prayer">
+    <div class="card__head">
+      <h2>Daily Prayer</h2>
+      <span class="card__tag" id="prayerDate">—</span>
+    </div>
+    <div id="prayerBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--countdown">
+    <div class="card__head">
+      <h2>Countdown</h2>
+      <button class="icon-btn" id="editCountdownBtn" title="Edit date" aria-label="Edit countdown date">✎</button>
+    </div>
+    <div id="countdownBody" class="card__body loading">Loading…</div>
+    <div id="countdownEdit" class="countdown-edit hidden">
+      <label class="countdown-edit__label" for="countdownLabelInput">Label</label>
+      <input type="text" id="countdownLabelInput" placeholder="Next visit" maxlength="40">
+      <label class="countdown-edit__label" for="countdownDateInput">Date</label>
+      <input type="date" id="countdownDateInput">
+      <div class="countdown-edit__actions">
+        <button id="saveCountdownBtn" class="btn btn--primary">Save</button>
+        <button id="cancelCountdownBtn" class="btn">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card--spotify">
+    <div class="card__head">
+      <h2>Now Playing</h2>
+      <span class="card__tag">Spotify</span>
+    </div>
+    <div id="spotifyBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--sports">
+    <div class="card__head">
+      <h2>Sports</h2>
+      <div class="tabs" id="sportsTabs">
+        <button class="tab is-active" data-league="nhl">NHL</button>
+        <button class="tab" data-league="mlb">MLB</button>
+        <button class="tab" data-league="nfl">NFL</button>
+      </div>
+    </div>
+    <div id="sportsBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--distance">
+    <div class="card__head">
+      <h2>Route to Pocomoke</h2>
+      <span class="card__tag" id="distanceMiles">— mi</span>
+    </div>
+    <div id="distanceMap" class="distance-map"></div>
+  </section>
+
+  <section class="card card--news">
+    <div class="card__head">
+      <h2>News</h2>
+    </div>
+    <div id="newsBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--games">
+    <div class="card__head">
+      <h2>Games</h2>
+    </div>
+    <div id="gamesBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--certs">
+    <div class="card__head">
+      <h2>Certifications</h2>
+      <button class="icon-btn" id="addCertBtn" title="Add certification" aria-label="Add certification">+</button>
+    </div>
+    <div id="certsBody" class="card__body loading">Loading…</div>
+    <div id="certAdd" class="inline-form hidden">
+      <input type="text" id="certNameInput" placeholder="e.g. CPR, EMT-B, Physical">
+      <div class="inline-form__row">
+        <div>
+          <label class="countdown-edit__label" for="certObtainedInput">Obtained</label>
+          <input type="date" id="certObtainedInput">
+        </div>
+        <div>
+          <label class="countdown-edit__label" for="certExpiresInput">Expires</label>
+          <input type="date" id="certExpiresInput">
+        </div>
+      </div>
+      <div class="countdown-edit__actions">
+        <button id="saveCertBtn" class="btn btn--primary">Add</button>
+        <button id="cancelCertBtn" class="btn">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card--reminders">
+    <div class="card__head">
+      <h2>Reminders</h2>
+      <button class="icon-btn" id="addReminderBtn" title="Add reminder" aria-label="Add reminder">+</button>
+    </div>
+    <div id="remindersBody" class="card__body loading">Loading…</div>
+    <div id="reminderAdd" class="inline-form hidden">
+      <input type="text" id="reminderTextInput" placeholder="What do you need to remember?">
+      <div class="inline-form__row">
+        <div>
+          <label class="countdown-edit__label" for="reminderDateInput">Date (optional)</label>
+          <input type="date" id="reminderDateInput">
+        </div>
+        <div>
+          <label class="countdown-edit__label" for="reminderTimeInput">Time (optional)</label>
+          <input type="time" id="reminderTimeInput">
+        </div>
+      </div>
+      <div class="countdown-edit__actions">
+        <button id="saveReminderBtn" class="btn btn--primary">Add</button>
+        <button id="cancelReminderBtn" class="btn">Cancel</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>
