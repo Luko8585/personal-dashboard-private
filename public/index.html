@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="board-header">
+  <div class="board-header__left">
+    <span class="led"></span>
+    <span class="eyebrow">DASHBOARD // STATUS: ONLINE</span>
+  </div>
+  <div class="board-header__clock">
+    <div id="mainClock" class="mainClock">--:--:--</div>
+    <div id="mainDate" class="mainDate">-- --- ----</div>
+  </div>
+  <div class="board-header__right" id="worldClocks">
+    <!-- populated by JS -->
+  </div>
+</header>
+
+<main class="grid">
+
+  <section class="card card--weather">
+    <div class="card__head">
+      <h2>Weather</h2>
+      <span class="card__tag" id="weatherPlace">Pocomoke City, MD</span>
+    </div>
+    <div id="weatherBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--sports">
+    <div class="card__head">
+      <h2>Sports</h2>
+      <div class="tabs" id="sportsTabs">
+        <button class="tab is-active" data-league="nhl">NHL</button>
+        <button class="tab" data-league="mlb">MLB</button>
+        <button class="tab" data-league="nfl">NFL</button>
+      </div>
+    </div>
+    <div id="sportsBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--spotify">
+    <div class="card__head">
+      <h2>Now Playing</h2>
+      <span class="card__tag">Spotify</span>
+    </div>
+    <div id="spotifyBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--news">
+    <div class="card__head">
+      <h2>News</h2>
+    </div>
+    <div id="newsBody" class="card__body loading">Loading…</div>
+  </section>
+
+  <section class="card card--games">
+    <div class="card__head">
+      <h2>Games</h2>
+    </div>
+    <div id="gamesBody" class="card__body loading">Loading…</div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
