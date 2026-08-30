@@ -515,7 +515,7 @@ app.get('/api/air-quality', async (req, res) => {
 
 
 // ---------- AI Assistant (Groq, free tier — with function calling to control the dashboard) ----------
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 const CHAT_TOOLS = [
   {
