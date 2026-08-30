@@ -763,6 +763,184 @@ document.getElementById('scannerToggle').addEventListener('click', (e) => {
   renderScanner();
 });
 
+// ---------- Launcher ----------
+let launcherState = [];
+
+function renderLauncher() {
+  const body = document.getElementById('launcherBody');
+  body.classList.remove('loading');
+  if (!launcherState.length) {
+    body.innerHTML = `<div class="np-empty">No links yet — tap + to add one.</div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div class="launcher-grid">
+      ${launcherState.map(t => `
+        <div class="launcher-tile ${!t.url ? 'is-unlinked' : ''}" data-launcher-id="${t.id}">
+          <button class="launcher-tile__remove" data-launcher-delete="${t.id}" title="Remove">✕</button>
+          <div class="launcher-tile__label">${t.label}</div>
+          ${!t.url ? '<div class="launcher-tile__hint">no link set</div>' : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function loadLauncher() {
+  try {
+    const r = await fetch('/api/launcher');
+    if (!r.ok) throw new Error('launcher fetch failed');
+    launcherState = await r.json();
+    renderLauncher();
+  } catch (e) {
+    document.getElementById('launcherBody').classList.remove('loading');
+    document.getElementById('launcherBody').innerHTML = `<div class="error-text">Couldn't load launcher.</div>`;
+  }
+}
+
+document.getElementById('addLauncherBtn').addEventListener('click', () => {
+  document.getElementById('launcherAdd').classList.toggle('hidden');
+});
+
+document.getElementById('cancelLauncherBtn').addEventListener('click', () => {
+  document.getElementById('launcherAdd').classList.add('hidden');
+});
+
+document.getElementById('saveLauncherBtn').addEventListener('click', async () => {
+  const label = document.getElementById('launcherLabelInput').value.trim();
+  const url = document.getElementById('launcherUrlInput').value.trim();
+  if (!label) return;
+  await fetch('/api/launcher', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label, url }),
+  });
+  document.getElementById('launcherLabelInput').value = '';
+  document.getElementById('launcherUrlInput').value = '';
+  document.getElementById('launcherAdd').classList.add('hidden');
+  loadLauncher();
+});
+
+document.getElementById('launcherBody').addEventListener('click', async (e) => {
+  const delBtn = e.target.closest('[data-launcher-delete]');
+  if (delBtn) {
+    e.stopPropagation();
+    await fetch(`/api/launcher/${delBtn.dataset.launcherDelete}`, { method: 'DELETE' });
+    loadLauncher();
+    return;
+  }
+  const tile = e.target.closest('.launcher-tile');
+  if (tile) {
+    const t = launcherState.find(x => x.id === tile.dataset.launcherId);
+    if (t && t.url) window.open(t.url, '_blank', 'noopener');
+  }
+});
+
+// ---------- AI Assistant chat ----------
+let chatHistory = [];
+let chatOpen = false;
+let chatConfigChecked = false;
+
+function chatAppendMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function chatAppendNote(text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg system-note';
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function chatShowTyping() {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-typing';
+  div.id = 'chatTypingIndicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function chatHideTyping() {
+  const el = document.getElementById('chatTypingIndicator');
+  if (el) el.remove();
+}
+
+async function chatSend() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('chatSend').disabled = true;
+
+  chatAppendMessage('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  chatShowTyping();
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory }),
+    });
+    const data = await r.json();
+    chatHideTyping();
+
+    if (data.notConfigured) {
+      chatAppendNote('AI assistant not connected yet. Add GROQ_API_KEY to enable.');
+      return;
+    }
+    if (data.error) {
+      chatAppendNote("Something went wrong reaching the assistant.");
+      return;
+    }
+
+    chatAppendMessage('assistant', data.reply);
+    chatHistory.push({ role: 'assistant', content: data.reply });
+
+    // Refresh any cards the assistant just modified
+    (data.affected || []).forEach(kind => {
+      if (kind === 'reminders') loadReminders();
+      if (kind === 'certs') loadCerts();
+      if (kind === 'countdown') loadCountdown();
+      if (kind === 'launcher') loadLauncher();
+    });
+  } catch (e) {
+    chatHideTyping();
+    chatAppendNote("Couldn't reach the assistant.");
+  } finally {
+    document.getElementById('chatSend').disabled = false;
+  }
+}
+
+document.getElementById('chatFab').addEventListener('click', () => {
+  chatOpen = !chatOpen;
+  document.getElementById('chatPanel').classList.toggle('hidden', !chatOpen);
+  if (chatOpen && !chatConfigChecked) {
+    chatConfigChecked = true;
+    chatAppendNote("Hey — I can add reminders, certifications, update your countdown, or add launcher links. Just ask.");
+  }
+  if (chatOpen) document.getElementById('chatInput').focus();
+});
+
+document.getElementById('chatClose').addEventListener('click', () => {
+  chatOpen = false;
+  document.getElementById('chatPanel').classList.add('hidden');
+});
+
+document.getElementById('chatSend').addEventListener('click', chatSend);
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') chatSend();
+});
+
 // ---------- Init + polling ----------
 loadWeather();
 loadWeatherAlerts();
@@ -778,6 +956,7 @@ loadReminders();
 loadTides();
 loadOnThisDay();
 loadScanner();
+loadLauncher();
 
 setInterval(loadWeather, 10 * 60 * 1000);
 setInterval(loadWeatherAlerts, 5 * 60 * 1000);

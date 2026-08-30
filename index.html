@@ -75,17 +75,6 @@
     <div id="spotifyBody" class="card__body loading">Loading…</div>
   </section>
 
-  <section class="card card--tides">
-    <div class="card__head">
-      <h2>Tides</h2>
-      <div class="toggle" id="tideToggle">
-        <button class="toggle__btn is-active" data-place="home">Baltimore</button>
-        <button class="toggle__btn" data-place="partner">Pocomoke</button>
-      </div>
-    </div>
-    <div id="tidesBody" class="card__body loading">Loading…</div>
-  </section>
-
   <section class="card card--sports">
     <div class="card__head">
       <h2>Sports</h2>
@@ -104,6 +93,17 @@
       <span class="card__tag" id="distanceMiles">— mi</span>
     </div>
     <div id="distanceMap" class="distance-map"></div>
+  </section>
+
+  <section class="card card--tides">
+    <div class="card__head">
+      <h2>Tides</h2>
+      <div class="toggle" id="tideToggle">
+        <button class="toggle__btn is-active" data-place="home">Baltimore</button>
+        <button class="toggle__btn" data-place="partner">Pocomoke</button>
+      </div>
+    </div>
+    <div id="tidesBody" class="card__body loading">Loading…</div>
   </section>
 
   <section class="card card--onthisday">
@@ -189,7 +189,37 @@
     <div id="scannerBody" class="card__body loading">Loading…</div>
   </section>
 
+  <section class="card card--launcher">
+    <div class="card__head">
+      <h2>Launcher</h2>
+      <button class="icon-btn" id="addLauncherBtn" title="Add link" aria-label="Add launcher tile">+</button>
+    </div>
+    <div id="launcherBody" class="card__body loading">Loading…</div>
+    <div id="launcherAdd" class="inline-form hidden">
+      <input type="text" id="launcherLabelInput" placeholder="Label (e.g. Shift Board)" maxlength="24">
+      <input type="text" id="launcherUrlInput" placeholder="URL (optional — add later)">
+      <div class="countdown-edit__actions">
+        <button id="saveLauncherBtn" class="btn btn--primary">Add</button>
+        <button id="cancelLauncherBtn" class="btn">Cancel</button>
+      </div>
+    </div>
+  </section>
+
 </main>
+
+<button class="chat-fab" id="chatFab" title="AI Assistant" aria-label="Open AI assistant">💬</button>
+
+<div class="chat-panel hidden" id="chatPanel">
+  <div class="chat-panel__head">
+    <span class="chat-panel__title">Dashboard Assistant</span>
+    <button class="chat-panel__close" id="chatClose" aria-label="Close chat">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Ask or tell it what to do…">
+    <button class="chat-send" id="chatSend" aria-label="Send">➤</button>
+  </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="app.js"></script>

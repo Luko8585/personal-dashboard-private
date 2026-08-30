@@ -57,6 +57,26 @@ No new cards — these fold into the existing Weather card and the top alert ban
 - **Air Quality Index** — US AQI + category (Good/Moderate/Unhealthy/etc.) shown as a weather stat. Free, no key (Open-Meteo).
 - **Daylight remaining** — hours/minutes of daylight left today, computed from sunrise/sunset already being fetched.
 
+## App Launcher
+
+A card with tiles for quick links to your other apps/services. Add tiles with just a label (no URL needed yet) — you can fill in URLs later by deleting and re-adding, or ask the AI assistant to add one for you. Tiles with no URL are shown greyed out and don't open anything when tapped.
+
+## AI Assistant (Groq, free)
+
+A floating chat button (bottom-right) that can actually control the dashboard — not just answer questions. It can:
+- Add reminders ("remind me to call the vet Tuesday at 9am")
+- Add certifications ("add my CPR cert, obtained today, expires in 2 years")
+- Update the countdown ("set the countdown to March 15")
+- Add launcher links ("add a Shift Board tile")
+- Answer questions about what's already on the dashboard
+
+**Setup:**
+1. Go to console.groq.com, sign up (free), and create an API key.
+2. Add `GROQ_API_KEY` to Railway's Variables tab.
+3. That's it — no other config. Groq's free tier is generous for personal use; if you ever hit a rate limit, the assistant will just show an error for that message.
+
+Without the key set, the chat button still works but shows "not connected" instead of a reply.
+
 ## Tides, On This Day & Scanner
 
 Three more cards, no setup required:

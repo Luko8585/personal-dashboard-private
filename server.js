@@ -37,6 +37,9 @@ const writeCerts = (data) => writeJSON('certs.json', data);
 const readReminders = () => readJSON('reminders.json', []);
 const writeReminders = (data) => writeJSON('reminders.json', data);
 
+const readLauncher = () => readJSON('launcher.json', []);
+const writeLauncher = (data) => writeJSON('launcher.json', data);
+
 // simple in-memory cache to avoid hammering upstream APIs
 const cache = new Map();
 async function cached(key, ttlMs, fn) {
@@ -379,6 +382,31 @@ app.delete('/api/reminders/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- Launcher (quick links to your other apps/homelab) ----------
+app.get('/api/launcher', (req, res) => {
+  res.json(readLauncher());
+});
+
+app.post('/api/launcher', (req, res) => {
+  const { label, url } = req.body || {};
+  if (!label) return res.status(400).json({ error: 'label is required' });
+  const tiles = readLauncher();
+  const tile = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    label,
+    url: url || null,
+  };
+  tiles.push(tile);
+  writeLauncher(tiles);
+  res.json(tile);
+});
+
+app.delete('/api/launcher/:id', (req, res) => {
+  const tiles = readLauncher().filter(t => t.id !== req.params.id);
+  writeLauncher(tiles);
+  res.json({ ok: true });
+});
+
 // ---------- Tides (NOAA CO-OPS, no API key required) ----------
 const TIDE_STATIONS = {
   home: { id: '8574680', name: 'Baltimore, MD' },
@@ -480,6 +508,204 @@ app.get('/api/air-quality', async (req, res) => {
       return { aqi: json.current?.us_aqi, pm25: json.current?.pm2_5 };
     });
     res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+
+// ---------- AI Assistant (Groq, free tier — with function calling to control the dashboard) ----------
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+
+const CHAT_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'add_reminder',
+      description: "Add a reminder to the dashboard's Reminders list.",
+      parameters: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: 'What to remember' },
+          date: { type: 'string', description: 'Due date in YYYY-MM-DD format. Optional.' },
+          time: { type: 'string', description: 'Due time in 24-hour HH:MM format. Optional.' },
+        },
+        required: ['text'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'add_certification',
+      description: "Add a firefighter/EMS certification to the dashboard's Certifications tracker.",
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Certification name, e.g. CPR, EMT-B, Annual Physical' },
+          obtainedDate: { type: 'string', description: 'Date obtained, YYYY-MM-DD. Optional.' },
+          expiresDate: { type: 'string', description: 'Expiration date, YYYY-MM-DD. Optional.' },
+        },
+        required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'set_countdown',
+      description: 'Set or update the countdown card (e.g. days until next visit).',
+      parameters: {
+        type: 'object',
+        properties: {
+          label: { type: 'string', description: "Label for the countdown, e.g. 'Next visit'" },
+          date: { type: 'string', description: 'Target date, YYYY-MM-DD' },
+        },
+        required: ['date'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'add_launcher_link',
+      description: "Add a quick-link tile to the dashboard's app launcher.",
+      parameters: {
+        type: 'object',
+        properties: {
+          label: { type: 'string', description: 'Short label for the tile' },
+          url: { type: 'string', description: 'URL to open. Optional.' },
+        },
+        required: ['label'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_dashboard_state',
+      description: 'Get the current reminders, certifications, and countdown so you can answer questions about what is already on the dashboard.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+];
+
+function runChatTool(name, args) {
+  switch (name) {
+    case 'add_reminder': {
+      const reminders = readReminders();
+      const reminder = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        text: args.text,
+        date: args.date || null,
+        time: args.time || null,
+        done: false,
+      };
+      reminders.push(reminder);
+      writeReminders(reminders);
+      return { ok: true, added: reminder, affected: 'reminders' };
+    }
+    case 'add_certification': {
+      const certs = readCerts();
+      const cert = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: args.name,
+        obtainedDate: args.obtainedDate || null,
+        expiresDate: args.expiresDate || null,
+      };
+      certs.push(cert);
+      writeCerts(certs);
+      return { ok: true, added: cert, affected: 'certs' };
+    }
+    case 'set_countdown': {
+      const current = readCountdown();
+      const updated = { date: args.date, label: args.label || current.label || 'Next visit' };
+      writeCountdown(updated);
+      return { ok: true, updated, affected: 'countdown' };
+    }
+    case 'add_launcher_link': {
+      const tiles = readLauncher();
+      const tile = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        label: args.label,
+        url: args.url || null,
+      };
+      tiles.push(tile);
+      writeLauncher(tiles);
+      return { ok: true, added: tile, affected: 'launcher' };
+    }
+    case 'get_dashboard_state': {
+      return {
+        reminders: readReminders(),
+        certifications: readCerts(),
+        countdown: readCountdown(),
+      };
+    }
+    default:
+      return { error: 'unknown tool' };
+  }
+}
+
+app.post('/api/chat', async (req, res) => {
+  const { GROQ_API_KEY } = process.env;
+  if (!GROQ_API_KEY) {
+    return res.status(200).json({ notConfigured: true });
+  }
+  const history = Array.isArray(req.body?.messages) ? req.body.messages.slice(-20) : [];
+  const today = new Date().toISOString().slice(0, 10);
+  const systemMessage = {
+    role: 'system',
+    content: `You are the assistant embedded in Luke's personal dashboard. Today's date is ${today}. You can add reminders, add certifications, update the countdown, and add launcher links using the provided tools when the user asks you to. Keep replies short and conversational — this is a small chat panel, not a document. When you take an action, briefly confirm what you did.`,
+  };
+
+  try {
+    let messages = [systemMessage, ...history];
+    const affected = new Set();
+    let finalReply = '';
+
+    for (let round = 0; round < 4; round++) {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages,
+          tools: CHAT_TOOLS,
+          tool_choice: 'auto',
+        }),
+      });
+      if (!r.ok) {
+        const errText = await r.text();
+        throw new Error(`Groq ${r.status}: ${errText.slice(0, 200)}`);
+      }
+      const json = await r.json();
+      const choice = json.choices?.[0]?.message;
+      if (!choice) throw new Error('No response from Groq');
+
+      if (choice.tool_calls && choice.tool_calls.length) {
+        messages.push(choice);
+        for (const call of choice.tool_calls) {
+          let args = {};
+          try { args = JSON.parse(call.function.arguments || '{}'); } catch {}
+          const result = runChatTool(call.function.name, args);
+          if (result.affected) affected.add(result.affected);
+          messages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            content: JSON.stringify(result),
+          });
+        }
+        continue; // let the model see tool results and respond
+      }
+
+      finalReply = choice.content || '';
+      break;
+    }
+
+    res.json({ reply: finalReply || "Done.", affected: [...affected] });
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
