@@ -443,6 +443,49 @@ app.get('/api/scanner', (req, res) => {
   res.json(SCANNER_FEEDS);
 });
 
+// ---------- Severe Weather Alerts (National Weather Service, no API key required) ----------
+app.get('/api/alerts', async (req, res) => {
+  const place = req.query.place === 'partner' ? 'partner' : 'home';
+  const loc = LOCATIONS[place];
+  try {
+    const data = await cached(`alerts:${place}`, 5 * 60 * 1000, async () => {
+      const url = `https://api.weather.gov/alerts/active?point=${loc.lat},${loc.lon}`;
+      const r = await fetch(url, { headers: { 'User-Agent': 'personal-dashboard (personal use)', Accept: 'application/geo+json' } });
+      if (!r.ok) throw new Error(`NWS ${r.status}`);
+      const json = await r.json();
+      return (json.features || []).map(f => ({
+        event: f.properties.event,
+        headline: f.properties.headline,
+        severity: f.properties.severity,
+        areaDesc: f.properties.areaDesc,
+        expires: f.properties.expires,
+      }));
+    });
+    res.json({ place: loc.name, alerts: data });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// ---------- Air Quality Index (Open-Meteo, no API key required) ----------
+app.get('/api/air-quality', async (req, res) => {
+  const place = req.query.place === 'partner' ? 'partner' : 'home';
+  const loc = LOCATIONS[place];
+  try {
+    const data = await cached(`aqi:${place}`, 30 * 60 * 1000, async () => {
+      const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=us_aqi,pm2_5`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`Open-Meteo AQI ${r.status}`);
+      const json = await r.json();
+      return { aqi: json.current?.us_aqi, pm25: json.current?.pm2_5 };
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Dashboard running on port ${PORT}`);
 });

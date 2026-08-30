@@ -49,6 +49,14 @@ Two more cards, no setup required:
 
 Both are stored the same way as the countdown date — a small JSON file on Railway's disk, which resets on redeploy (see the note below).
 
+## Weather Alerts, Air Quality & Daylight
+
+No new cards — these fold into the existing Weather card and the top alert banner:
+
+- **Severe weather alerts** — active NWS watches/warnings for whichever location is toggled (Baltimore/Pocomoke), surfaced immediately in the banner at the top of the dashboard. Free, no API key (National Weather Service public API).
+- **Air Quality Index** — US AQI + category (Good/Moderate/Unhealthy/etc.) shown as a weather stat. Free, no key (Open-Meteo).
+- **Daylight remaining** — hours/minutes of daylight left today, computed from sunrise/sunset already being fetched.
+
 ## Tides, On This Day & Scanner
 
 Three more cards, no setup required:
