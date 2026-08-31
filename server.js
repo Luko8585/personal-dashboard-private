@@ -9,6 +9,12 @@ const app = express();
 const parser = new Parser({ timeout: 8000 });
 const PORT = process.env.PORT || 3000;
 
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 app.use(express.static('public'));
 app.use(express.json());
 
